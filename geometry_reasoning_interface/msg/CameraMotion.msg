@@ -1,0 +1,3 @@
+string direction
+float32 magnitude
+bool scale_ambiguity
