@@ -18,6 +18,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/DescriptorList.msg"
   "msg/FeatureMatch.msg"
   "msg/FeatureMatchList.msg"
+  "msg/GeometricInliers.msg"
+  "msg/CameraMotion.msg"
   DEPENDENCIES std_msgs
 )
 
