@@ -97,4 +97,4 @@ if __name__ == '__main__':
     main()
 
 # command to run node
-# ros2 run my_py_pkg motion_estimation_node
+# ros2 run my_py_pkg motion_node
