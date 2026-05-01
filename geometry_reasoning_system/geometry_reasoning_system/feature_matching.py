@@ -25,8 +25,8 @@ class FeatureMatching(Node):
     
         threshold = self.get_parameter('match_threshold').value
                
-        current_arr_descriptors = np.array([d.data for d in msg.descriptors], dtype=np.uint8)
-        prev_arr_descriptors = np.array([d.data for d in self.prev_descriptors], dtype=np.uint8)
+        current_arr_descriptors = np.array([d.descriptor for d in msg.descriptors], dtype=np.uint8)
+        prev_arr_descriptors = np.array([d.descriptor for d in self.prev_descriptors], dtype=np.uint8)
 
         matches = self.bf.knnMatch(prev_arr_descriptors, current_arr_descriptors, k=2)
         # matches = self.bf.match(prev_arr_descriptors, current_arr_descriptors)
@@ -62,11 +62,9 @@ class FeatureMatching(Node):
                     feature_match.y_new = pt2_y
                     feature_match.distance = match_score
 
-
-
-
                     match_list.matches.append(feature_match)
 
+        self.get_logger().info(f"Frame {msg.header.frame_id}: Found {len(matches)} potential pairs.")
         self.matching_pub.publish(match_list)
         self.prev_descriptors = msg.descriptors
 
