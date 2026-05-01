@@ -20,6 +20,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/FeatureMatchList.msg"
   "msg/GeometricInliers.msg"
   "msg/CameraMotion.msg"
+  "srv/CheckGeometry.srv"
   DEPENDENCIES std_msgs
 )
 

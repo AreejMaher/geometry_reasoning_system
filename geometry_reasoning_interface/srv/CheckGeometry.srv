@@ -1,0 +1,3 @@
+---
+bool is_consistent
+uint32 inlier_count
