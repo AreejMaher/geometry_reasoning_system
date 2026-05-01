@@ -22,7 +22,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/CameraMotion.msg"
   "srv/CheckGeometry.srv"
   "action/Report.action"
-  DEPENDENCIES std_msgs
+  DEPENDENCIES std_msgs action_msgs
 )
 
 if(BUILD_TESTING)
