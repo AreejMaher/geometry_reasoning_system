@@ -51,27 +51,44 @@ class MotionEstimationNode(Node):  # define ros2 node class
 
     def calculate_relative_movement(self, msg):
         # simple motion estimation logic
-        # compares average movement of feature points
-
+        # compares average movement of feature points (x and y)
         if len(msg.current_x) == 0: # if no points received
             return "NONE", 0.0
 
-        total_shift = 0.0
+        total_shift_x = 0.0
+        total_shift_y = 0.0
         point_count = len(msg.current_x)
 
-        for i in range(point_count):  # calculate horizontal movement
-            shift = msg.current_x[i] - msg.previous_x[i]
-            total_shift += shift
+        for i in range(point_count):    # calculate movement for each feature point
+            shift_x = msg.current_x[i] - msg.previous_x[i]
+            shift_y = msg.current_y[i] - msg.previous_y[i]
 
-        average_shift = total_shift / point_count # average pixel movement
-        magnitude = abs(average_shift) / self.focal_length # normalize using focal length
-      
-        if average_shift > 5:
-            direction = "LEFT" # features moved right → camera moved left
-        elif average_shift < -5:
-            direction = "RIGHT" # features moved left → camera moved right
+            total_shift_x += shift_x
+            total_shift_y += shift_y
+
+        avg_x = total_shift_x / point_count
+        avg_y = total_shift_y / point_count
+
+        magnitude = (abs(avg_x) + abs(avg_y)) / (2 * self.focal_length)
+
+        #  decision logic
+        if abs(avg_x) > abs(avg_y):
+            # horizontal dominates
+            if avg_x > 5:
+                direction = "LEFT"
+            elif avg_x < -5:
+                direction = "RIGHT"
+            else:
+                direction = "NONE"
         else:
-            direction = "FORWARD" # small horizontal change
+            # vertical dominates
+            if avg_y > 5:
+                direction = "BACKWARD"
+            elif avg_y < -5:
+                direction = "FORWARD"
+            else:
+                direction = "NONE"
+
         return direction, magnitude
 
 def main(args=None):
