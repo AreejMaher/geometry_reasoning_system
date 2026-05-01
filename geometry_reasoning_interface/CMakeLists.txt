@@ -21,6 +21,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/GeometricInliers.msg"
   "msg/CameraMotion.msg"
   "srv/CheckGeometry.srv"
+  "action/Report.action"
   DEPENDENCIES std_msgs
 )
 
