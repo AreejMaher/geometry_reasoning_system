@@ -30,7 +30,7 @@ setup(
             'feature_matching = geometry_reasoning_system.feature_matching:main',
             'match_filtering = geometry_reasoning_system.match_filtering:main',
             'geometric_consistency = geometry_reasoning_system.geometric_consistency:main',
-            'motion_node = geometry_reasoning_system.motion_estimation:main',
+            'motion_estimation = geometry_reasoning_system.motion_estimation:main',
             'reliability_decision = geometry_reasoning_system.reliability_decision:main',
         ],
     },
