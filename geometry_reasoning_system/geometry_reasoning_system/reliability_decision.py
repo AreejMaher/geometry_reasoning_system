@@ -1,9 +1,9 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import String, Int32
-
-from rclpy.action import ActionServer
+from std_msgs.msg import String
+from geometry_reasoning_interface.msg import GeometricInliers, CameraMotion
 from geometry_reasoning_interface.action import Report
+from rclpy.action import ActionServer
 
 
 class ReliabilityNode(Node):
@@ -11,16 +11,30 @@ class ReliabilityNode(Node):
     def __init__(self):
         super().__init__('reliability_decision')
 
-        # Parameter
+        self.get_logger().info('Reliability Decision Node Started')
+
+        # Parameters
         self.declare_parameter('min_inliers', 15)
-        self.min_inliers = self.get_parameter('min_inliers').value
+        self.min_inliers = self.get_parameter('min_inliers') \
+            .get_parameter_value().integer_value
 
         # Subscribers
-        self.create_subscription(Int32, '/geometric_inliers', self.inliers_callback, 10)
-        self.create_subscription(String, '/camera_motion', self.motion_callback, 10)
+        self.create_subscription(
+            GeometricInliers,
+            '/geometric_inliers',
+            self.inliers_callback,
+            10
+        )
+
+        self.create_subscription(
+            CameraMotion,
+            '/camera_motion',
+            self.motion_callback,
+            10
+        )
 
         # Publisher
-        self.publisher = self.create_publisher(String, '/system_state', 10)
+        self.state_pub = self.create_publisher(String, '/system_state', 10)
 
         # Action Server
         self._action_server = ActionServer(
@@ -31,47 +45,57 @@ class ReliabilityNode(Node):
         )
 
         # Variables
-        self.inliers = 0
-        self.motion = ""
+        self.inliers_count = 0
+        self.motion_type = "NONE"
         self.state = "UNRELIABLE"
 
     def inliers_callback(self, msg):
-        self.inliers = msg.data
-        self.evaluate()
+        self.inliers_count = len(msg.current_x)
+        self.get_logger().info(f'Inliers Received: {self.inliers_count}')
+        self.update_state()
 
     def motion_callback(self, msg):
-        self.motion = msg.data
-        self.evaluate()
+        if hasattr(msg, 'motion_direction'):
+            self.motion_type = msg.motion_direction
+        elif hasattr(msg, 'motion'):
+            self.motion_type = msg.motion
+        elif hasattr(msg, 'direction'):
+            self.motion_type = msg.direction
+        else:
+            self.motion_type = "NONE"
+            self.get_logger().warn(
+                "Field 'motion' not found in CameraMotion message."
+            )
 
-    def evaluate(self):
-        # 1. LOW FEATURES
-        if self.inliers < self.min_inliers:
+        self.update_state()
+
+    def update_state(self):
+
+        # Decide state
+        if self.inliers_count < self.min_inliers:
             self.state = "LOW_FEATURES"
 
-        # 2. UNRELIABLE (few matches or weak consistency)
-        elif self.inliers < (self.min_inliers * 2):
-            self.state = "UNRELIABLE"
-
-        # 3. RELIABLE
-        else:
+        elif self.inliers_count >= self.min_inliers and self.motion_type != "NONE":
             self.state = "RELIABLE"
 
-        # Publish result
-        msg = String()
-        msg.data = self.state
-        self.publisher.publish(msg)
+        else:
+            self.state = "UNRELIABLE"
 
-        self.get_logger().info(f"System State: {self.state}")
+        # Publish state
+        state_msg = String()
+        state_msg.data = self.state
+        self.state_pub.publish(state_msg)
 
-    def execute_callback(self, goal_handle):
-        self.get_logger().info("Report Action Requested")
+        # Log
+        self.get_logger().info(
+            f'Status: {self.state} | Inliers: {self.inliers_count} | Motion: {self.motion_type}'
+        )
 
-        # Feedback (اختياري)
-        feedback_msg = Report.Feedback()
-        feedback_msg.feedback = "Processing..."
-        goal_handle.publish_feedback(feedback_msg)
+    async def execute_callback(self, goal_handle):
+        self.get_logger().info(
+            f'Received report request: {goal_handle.request.request}'
+        )
 
-        # Result
         result = Report.Result()
         result.state = self.state
 
@@ -82,9 +106,15 @@ class ReliabilityNode(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = ReliabilityNode()
-    rclpy.spin(node)
-    node.destroy_node()
-    rclpy.shutdown()
+
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        node.get_logger().info('Node stopped by user (Ctrl+C)')
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()

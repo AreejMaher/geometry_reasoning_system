@@ -68,7 +68,7 @@ class MotionEstimationNode(Node):  # define ros2 node class
 
         avg_x = total_shift_x / point_count
         avg_y = total_shift_y / point_count
-
+        self.get_logger().info(f"avg_x: {avg_x:.2f}, avg_y: {avg_y:.2f}")       
         magnitude = (abs(avg_x) + abs(avg_y)) / (2 * self.focal_length)
 
         #  decision logic
@@ -90,7 +90,7 @@ class MotionEstimationNode(Node):  # define ros2 node class
                 direction = "NONE"
 
         return direction, magnitude
-
+    
 def main(args=None):
     rclpy.init(args=args)
     # initialize ros2
@@ -113,5 +113,3 @@ def main(args=None):
 if __name__ == '__main__':
     main()
 
-# command to run node
-# ros2 run my_py_pkg motion_node
